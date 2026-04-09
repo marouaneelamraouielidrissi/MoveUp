@@ -151,6 +151,13 @@ const App = {
             });
         });
 
+        // Desktop nav navigation
+        document.querySelectorAll('.desktop-nav .nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.switchView(btn.dataset.view);
+            });
+        });
+
         // Install button
         document.getElementById('install-btn').addEventListener('click', () => {
             this.promptInstall();
@@ -270,9 +277,14 @@ const App = {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(viewName + '-view').classList.add('active');
 
-        // Update tabs
+        // Update bottom tabs
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelector(`.tab[data-view="${viewName}"]`).classList.add('active');
+
+        // Update desktop nav
+        document.querySelectorAll('.desktop-nav .nav-btn').forEach(b => b.classList.remove('active'));
+        const desktopBtn = document.querySelector(`.desktop-nav .nav-btn[data-view="${viewName}"]`);
+        if (desktopBtn) desktopBtn.classList.add('active');
 
         if (viewName === 'stats') this.updateStats();
         if (viewName === 'activities') this.renderActivities(
