@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body>
+<canvas id="c" width="512" height="512"></canvas>
+<script>
+// Open this file in a browser, right-click the canvas to save as PNG
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const s = 512;
+
+// Background
+const grad = ctx.createLinearGradient(0, 0, s, s);
+grad.addColorStop(0, '#4F46E5');
+grad.addColorStop(1, '#10B981');
+ctx.fillStyle = grad;
+ctx.beginPath();
+ctx.roundRect(0, 0, s, s, 96);
+ctx.fill();
+
+// Walking figure
+ctx.fillStyle = 'white';
+ctx.font = 'bold 260px sans-serif';
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.fillText('🚶', s/2, s/2);
+
+document.title = 'Right-click canvas > Save image as icon-512.png';
+</script>
+</body>
+</html>
