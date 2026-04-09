@@ -7,6 +7,7 @@ const App = {
     currentSession: 1,
     timeRemaining: 0,
     totalTime: 0,
+    endTimestamp: null, // When the current phase ends (absolute time)
     timerInterval: null,
     sedentaryInterval: null,
     lastMoveTime: Date.now(),
@@ -222,12 +223,13 @@ const App = {
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && this.state === 'working') {
                 this.updateTitle();
-            } else {
+            } else if (!document.hidden) {
                 document.title = 'MoveUp - Rappel de Pauses Actives';
-                // Re-acquire wake lock when returning to app
-                if (!document.hidden && this.state === 'working') {
-                    this.requestWakeLock();
+                // Recalculate time when returning from background
+                if (this.state === 'working' && this.endTimestamp) {
+                    this.syncTimer();
                 }
+                this.requestWakeLock();
             }
         });
     },
@@ -298,6 +300,7 @@ const App = {
         this.currentSession = 1;
         this.totalTime = this.settings.workDuration * 60;
         this.timeRemaining = this.totalTime;
+        this.endTimestamp = Date.now() + this.timeRemaining * 1000;
         this.state = 'working';
         this.lastMoveTime = Date.now();
 
@@ -310,6 +313,7 @@ const App = {
 
     pauseTimer() {
         this.state = 'paused';
+        this.endTimestamp = null;
         clearInterval(this.timerInterval);
         this.releaseWakeLock();
         this.updateTimerUI();
@@ -317,6 +321,7 @@ const App = {
 
     resumeTimer() {
         this.state = 'working';
+        this.endTimestamp = Date.now() + this.timeRemaining * 1000;
         this.requestWakeLock();
         this.timerInterval = setInterval(() => this.tick(), 1000);
         this.updateTimerUI();
@@ -332,20 +337,40 @@ const App = {
         this.state = 'idle';
         this.phase = 'work';
         this.currentSession = 1;
+        this.endTimestamp = null;
         this.releaseWakeLock();
         this.updateTimerDisplay();
         this.updateTimerUI();
         this.updateMotivation();
     },
 
+    // Sync timer with real time (fixes background suspension on mobile)
+    syncTimer() {
+        if (!this.endTimestamp) return;
+        const remaining = Math.round((this.endTimestamp - Date.now()) / 1000);
+        if (remaining <= 0) {
+            // Timer expired while in background
+            this.timeRemaining = 0;
+            clearInterval(this.timerInterval);
+            this.phaseComplete();
+        } else {
+            this.timeRemaining = remaining;
+            this.updateTimerDisplay();
+        }
+    },
+
     tick() {
+        // Use real timestamp instead of decrement to stay accurate
+        if (this.endTimestamp) {
+            this.timeRemaining = Math.round((this.endTimestamp - Date.now()) / 1000);
+        }
+
         if (this.timeRemaining <= 0) {
+            this.timeRemaining = 0;
             clearInterval(this.timerInterval);
             this.phaseComplete();
             return;
         }
-
-        this.timeRemaining--;
         this.updateTimerDisplay();
         this.updateTitle();
     },
@@ -379,10 +404,12 @@ const App = {
 
             if (this.settings.autoStart) {
                 this.state = 'working';
+                this.endTimestamp = Date.now() + this.timeRemaining * 1000;
                 this.requestWakeLock();
                 this.timerInterval = setInterval(() => this.tick(), 1000);
             } else {
                 this.state = 'idle';
+                this.endTimestamp = null;
                 this.releaseWakeLock();
             }
 
@@ -400,6 +427,7 @@ const App = {
 
         this.totalTime = breakMins * 60;
         this.timeRemaining = this.totalTime;
+        this.endTimestamp = Date.now() + this.timeRemaining * 1000;
         this.state = 'working';
 
         const suggestion = getRandomBreakSuggestion();
@@ -449,6 +477,7 @@ const App = {
         this.phase = 'work';
         this.totalTime = this.settings.workDuration * 60;
         this.timeRemaining = this.totalTime;
+        this.endTimestamp = Date.now() + this.timeRemaining * 1000;
 
         this.state = 'working';
         this.requestWakeLock();
@@ -594,6 +623,7 @@ const App = {
 
         this.totalTime = activity.duration * 60;
         this.timeRemaining = this.totalTime;
+        this.endTimestamp = Date.now() + this.timeRemaining * 1000;
         this.updateBreakTimer();
 
         this.els.breakOverlay.classList.remove('hidden');
