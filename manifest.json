@@ -1,0 +1,20 @@
+{
+    "name": "MoveUp - Rappel de Pauses Actives",
+    "short_name": "MoveUp",
+    "description": "Application de rappel de pauses actives pour lutter contre la sédentarité",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#0F172A",
+    "theme_color": "#4F46E5",
+    "lang": "fr",
+    "categories": ["health", "fitness", "productivity"],
+    "icons": [
+        {
+            "src": "icons/pomodoro.jpg",
+            "sizes": "any",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        }
+    ]
+}
