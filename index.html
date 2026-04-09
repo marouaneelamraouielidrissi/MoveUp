@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MoveUp - Rappel de Pauses Actives</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MoveUp">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <!-- Preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header (compact on mobile) -->
+        <header>
+            <div class="logo">
+                <span class="logo-icon">🚶‍♂️</span>
+                <h1>MoveUp</h1>
+            </div>
+            <!-- Install banner -->
+            <button id="install-btn" class="btn btn-install hidden">
+                Installer l'app 📲
+            </button>
+        </header>
+
+        <!-- Timer View -->
+        <section id="timer-view" class="view active">
+            <div class="timer-container">
+                <div class="timer-ring-wrapper">
+                    <svg class="timer-ring" viewBox="0 0 260 260">
+                        <circle class="timer-ring-bg" cx="130" cy="130" r="120" />
+                        <circle class="timer-ring-progress" cx="130" cy="130" r="120" />
+                    </svg>
+                    <div class="timer-display">
+                        <span class="timer-phase" id="timer-phase">Travail</span>
+                        <span class="timer-time" id="timer-time">45:00</span>
+                        <span class="timer-session" id="timer-session">Session 1/4</span>
+                    </div>
+                </div>
+
+                <div class="timer-controls">
+                    <button id="btn-start" class="btn btn-primary btn-lg">
+                        <span class="btn-icon">▶</span> Démarrer
+                    </button>
+                    <button id="btn-pause" class="btn btn-secondary btn-lg hidden">
+                        <span class="btn-icon">⏸</span> Pause
+                    </button>
+                    <button id="btn-resume" class="btn btn-primary btn-lg hidden">
+                        <span class="btn-icon">▶</span> Reprendre
+                    </button>
+                    <button id="btn-skip" class="btn btn-ghost hidden">
+                        Passer ⏭
+                    </button>
+                    <button id="btn-reset" class="btn btn-ghost hidden">
+                        Réinitialiser ↺
+                    </button>
+                </div>
+
+                <div class="motivation-card" id="motivation-card">
+                    <p id="motivation-text">Prêt à commencer ? Chaque pause compte pour ta santé !</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activities View -->
+        <section id="activities-view" class="view">
+            <h2 class="view-title">Activités pendant les pauses</h2>
+            <div class="activity-filters">
+                <button class="filter-btn active" data-filter="all">Toutes</button>
+                <button class="filter-btn" data-filter="marche">Marche</button>
+                <button class="filter-btn" data-filter="etirement">Étirements</button>
+                <button class="filter-btn" data-filter="exercice">Exercices</button>
+                <button class="filter-btn" data-filter="respiration">Respiration</button>
+            </div>
+            <div class="activities-grid" id="activities-grid"></div>
+        </section>
+
+        <!-- Stats View -->
+        <section id="stats-view" class="view">
+            <h2 class="view-title">Tes statistiques</h2>
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <span class="stat-icon">🎯</span>
+                    <span class="stat-value" id="stat-sessions">0</span>
+                    <span class="stat-label">Sessions aujourd'hui</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🚶</span>
+                    <span class="stat-value" id="stat-breaks">0</span>
+                    <span class="stat-label">Pauses actives</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">⏱</span>
+                    <span class="stat-value" id="stat-work-time">0h 0m</span>
+                    <span class="stat-label">Temps de travail</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">💪</span>
+                    <span class="stat-value" id="stat-move-time">0m</span>
+                    <span class="stat-label">Temps actif</span>
+                </div>
+            </div>
+
+            <div class="streak-card">
+                <h3>🔥 Série en cours</h3>
+                <div class="streak-info">
+                    <span class="streak-number" id="streak-count">0</span>
+                    <span class="streak-label">jours consécutifs</span>
+                </div>
+            </div>
+
+            <div class="weekly-chart-container">
+                <h3>Cette semaine</h3>
+                <div class="weekly-chart" id="weekly-chart"></div>
+            </div>
+
+            <div class="history-section">
+                <h3>Historique récent</h3>
+                <div id="history-list" class="history-list"></div>
+            </div>
+        </section>
+
+        <!-- Settings View -->
+        <section id="settings-view" class="view">
+            <h2 class="view-title">Réglages</h2>
+            <div class="settings-group">
+                <h3>Durées</h3>
+                <div class="setting-item">
+                    <label for="work-duration">Durée de travail</label>
+                    <div class="setting-control">
+                        <input type="range" id="work-duration" min="15" max="90" value="45" step="5">
+                        <span class="setting-value" id="work-duration-val">45 min</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="short-break">Pause courte</label>
+                    <div class="setting-control">
+                        <input type="range" id="short-break" min="3" max="15" value="5" step="1">
+                        <span class="setting-value" id="short-break-val">5 min</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="long-break">Pause longue</label>
+                    <div class="setting-control">
+                        <input type="range" id="long-break" min="10" max="30" value="15" step="5">
+                        <span class="setting-value" id="long-break-val">15 min</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="sessions-before-long">Sessions avant pause longue</label>
+                    <div class="setting-control">
+                        <input type="range" id="sessions-before-long" min="2" max="6" value="4" step="1">
+                        <span class="setting-value" id="sessions-before-long-val">4</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Notifications</h3>
+                <div class="setting-item">
+                    <label for="notif-toggle">Notifications</label>
+                    <label class="switch">
+                        <input type="checkbox" id="notif-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label for="sound-toggle">Son d'alerte</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sound-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label for="vibration-toggle">Vibration</label>
+                    <label class="switch">
+                        <input type="checkbox" id="vibration-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label for="auto-start">Démarrage auto des sessions</label>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-start">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Rappel de sédentarité</h3>
+                <div class="setting-item">
+                    <label for="sedentary-alert">Alerte si inactif depuis</label>
+                    <div class="setting-control">
+                        <input type="range" id="sedentary-alert" min="30" max="120" value="60" step="10">
+                        <span class="setting-value" id="sedentary-alert-val">60 min</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="sedentary-toggle">Activer le rappel</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sedentary-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label for="wakelock-toggle">Garder l'écran allumé</label>
+                    <label class="switch">
+                        <input type="checkbox" id="wakelock-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn btn-danger" id="btn-reset-stats">Réinitialiser les statistiques</button>
+
+            <div class="app-info">
+                <p>MoveUp v2.0 — PWA</p>
+                <p>Fonctionne hors-ligne</p>
+            </div>
+        </section>
+
+        <!-- Break Overlay -->
+        <div id="break-overlay" class="overlay hidden">
+            <div class="overlay-content">
+                <div class="break-animation">
+                    <span class="break-emoji" id="break-emoji">🚶‍♂️</span>
+                </div>
+                <h2 id="break-title">C'est l'heure de bouger !</h2>
+                <p id="break-suggestion">Va faire une petite marche de 5 minutes</p>
+                <div class="break-timer">
+                    <span id="break-timer-display">05:00</span>
+                </div>
+                <button class="btn btn-primary btn-lg" id="btn-end-break">J'ai bougé ! ✓</button>
+            </div>
+        </div>
+
+        <!-- Sedentary Alert -->
+        <div id="sedentary-overlay" class="overlay hidden">
+            <div class="overlay-content sedentary-alert">
+                <div class="alert-animation">⚠️</div>
+                <h2>Tu es assis(e) depuis trop longtemps !</h2>
+                <p id="sedentary-time-msg">Cela fait plus de 60 minutes sans bouger.</p>
+                <p class="sedentary-tip" id="sedentary-tip">Lève-toi et fais quelques pas, même 2 minutes font la différence.</p>
+                <div class="sedentary-actions">
+                    <button class="btn btn-primary btn-lg" id="btn-start-moving">Je vais bouger 🚶</button>
+                    <button class="btn btn-ghost" id="btn-snooze">Rappeler dans 10 min</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Tab Bar (Mobile Navigation) -->
+        <nav class="tab-bar" id="tab-bar">
+            <button class="tab active" data-view="timer">
+                <span class="tab-icon">⏱</span>
+                <span class="tab-label">Minuteur</span>
+            </button>
+            <button class="tab" data-view="activities">
+                <span class="tab-icon">🏃</span>
+                <span class="tab-label">Activités</span>
+            </button>
+            <button class="tab" data-view="stats">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">Stats</span>
+            </button>
+            <button class="tab" data-view="settings">
+                <span class="tab-icon">⚙️</span>
+                <span class="tab-label">Réglages</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="activities.js"></script>
+    <script src="notifications.js"></script>
+    <script src="stats.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
