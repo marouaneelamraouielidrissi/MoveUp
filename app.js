@@ -427,8 +427,6 @@ const App = {
 
         this.totalTime = breakMins * 60;
         this.timeRemaining = this.totalTime;
-        this.endTimestamp = Date.now() + this.timeRemaining * 1000;
-        this.state = 'working';
 
         const suggestion = getRandomBreakSuggestion();
         this.els.breakEmoji.textContent = suggestion.emoji;
@@ -439,18 +437,10 @@ const App = {
 
         NotificationManager.notifyBreakStart(suggestion.text);
 
+        this.state = 'onBreak';
+        this.endTimestamp = null;
         this.els.breakOverlay.classList.remove('hidden');
         this.updateBreakTimer();
-        this.timerInterval = setInterval(() => {
-            this.timeRemaining--;
-            this.updateBreakTimer();
-            this.updateTimerDisplay();
-
-            if (this.timeRemaining <= 0) {
-                clearInterval(this.timerInterval);
-                this.phaseComplete();
-            }
-        }, 1000);
     },
 
     updateBreakTimer() {
@@ -503,7 +493,7 @@ const App = {
             if (minutesSinceMove >= this.settings.sedentaryAlert) {
                 this.showSedentaryAlert(Math.round(minutesSinceMove));
             }
-        }, 60000);
+        }, 600000);
     },
 
     showSedentaryAlert(minutes) {
