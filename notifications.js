@@ -258,5 +258,13 @@ const NotificationManager = {
             `Tu es assis(e) depuis ${minutes} minutes. Lève-toi et bouge !`,
             'alert'
         );
+    },
+
+    notifyMoveReminder(count, suggestion) {
+        this.send(
+            `🔔 Rappel ${count}/2 — Tu n'as pas encore bougé !`,
+            suggestion || 'Allez, 2 minutes suffisent pour se dégourdir les jambes !',
+            'alert'
+        );
     }
 };

@@ -10,6 +10,9 @@ const App = {
     endTimestamp: null, // When the current phase ends (absolute time)
     timerInterval: null,
     sedentaryInterval: null,
+    moveReminderInterval: null,
+    moveReminderCount: 0,
+    lastBreakSuggestion: '',
     lastMoveTime: Date.now(),
     wakeLock: null,
     deferredInstallPrompt: null,
@@ -334,6 +337,7 @@ const App = {
 
     resetTimer() {
         clearInterval(this.timerInterval);
+        this.stopMoveReminders();
         this.state = 'idle';
         this.phase = 'work';
         this.currentSession = 1;
@@ -438,6 +442,7 @@ const App = {
         this.els.breakSuggestion.textContent = suggestion.text;
 
         NotificationManager.notifyBreakStart(suggestion.text);
+        this.startMoveReminders(suggestion.text);
 
         this.els.breakOverlay.classList.remove('hidden');
         this.updateBreakTimer();
@@ -462,6 +467,7 @@ const App = {
 
     endBreak() {
         clearInterval(this.timerInterval);
+        this.stopMoveReminders();
         const actualMins = Math.round((this.totalTime - this.timeRemaining) / 60) || 1;
         StatsManager.recordBreak(actualMins, 'Pause active');
 
@@ -491,6 +497,28 @@ const App = {
 
     hideBreakOverlay() {
         this.els.breakOverlay.classList.add('hidden');
+    },
+
+    // === Move Reminders (after work phase ends) ===
+    startMoveReminders(suggestion) {
+        this.stopMoveReminders();
+        this.moveReminderCount = 0;
+        this.lastBreakSuggestion = suggestion;
+        this.moveReminderInterval = setInterval(() => {
+            this.moveReminderCount++;
+            NotificationManager.notifyMoveReminder(this.moveReminderCount, this.lastBreakSuggestion);
+            if (this.moveReminderCount >= 2) {
+                this.stopMoveReminders();
+            }
+        }, 10 * 60 * 1000); // 10 minutes
+    },
+
+    stopMoveReminders() {
+        if (this.moveReminderInterval) {
+            clearInterval(this.moveReminderInterval);
+            this.moveReminderInterval = null;
+        }
+        this.moveReminderCount = 0;
     },
 
     // === Sedentary Tracker ===
@@ -525,6 +553,7 @@ const App = {
 
     startMovingFromAlert() {
         this.els.sedentaryOverlay.classList.add('hidden');
+        this.stopMoveReminders();
         this.lastMoveTime = Date.now();
         StatsManager.recordBreak(2, 'Pause sédentarité');
         this.updateStats();
