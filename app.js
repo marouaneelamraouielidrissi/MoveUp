@@ -13,6 +13,7 @@ const App = {
     moveReminderInterval: null,
     moveReminderCount: 0,
     lastBreakSuggestion: '',
+    breakTimerStarted: false,
     lastMoveTime: Date.now(),
     wakeLock: null,
     deferredInstallPrompt: null,
@@ -431,8 +432,9 @@ const App = {
 
         this.totalTime = breakMins * 60;
         this.timeRemaining = this.totalTime;
-        this.endTimestamp = Date.now() + this.timeRemaining * 1000;
-        this.state = 'working';
+        this.endTimestamp = null;
+        this.state = 'onBreak';
+        this.breakTimerStarted = false;
 
         const suggestion = getRandomBreakSuggestion();
         this.els.breakEmoji.textContent = suggestion.emoji;
@@ -444,18 +446,9 @@ const App = {
         NotificationManager.notifyBreakStart(suggestion.text);
         this.startMoveReminders(suggestion.text);
 
+        this.els.btnEndBreak.textContent = 'Je bouge ! 🚶';
         this.els.breakOverlay.classList.remove('hidden');
         this.updateBreakTimer();
-        this.timerInterval = setInterval(() => {
-            this.timeRemaining--;
-            this.updateBreakTimer();
-            this.updateTimerDisplay();
-
-            if (this.timeRemaining <= 0) {
-                clearInterval(this.timerInterval);
-                this.phaseComplete();
-            }
-        }, 1000);
     },
 
     updateBreakTimer() {
@@ -466,8 +459,27 @@ const App = {
     },
 
     endBreak() {
+        // Premier clic : démarre le chrono de pause
+        if (!this.breakTimerStarted) {
+            this.breakTimerStarted = true;
+            this.stopMoveReminders();
+            this.lastMoveTime = Date.now();
+            this.endTimestamp = Date.now() + this.timeRemaining * 1000;
+            this.els.btnEndBreak.textContent = 'J\'ai bougé ! ✓';
+            this.timerInterval = setInterval(() => {
+                this.timeRemaining--;
+                this.updateBreakTimer();
+                this.updateTimerDisplay();
+                if (this.timeRemaining <= 0) {
+                    clearInterval(this.timerInterval);
+                    this.phaseComplete();
+                }
+            }, 1000);
+            return;
+        }
+
+        // Deuxième clic : termine la pause en avance
         clearInterval(this.timerInterval);
-        this.stopMoveReminders();
         const actualMins = Math.round((this.totalTime - this.timeRemaining) / 60) || 1;
         StatsManager.recordBreak(actualMins, 'Pause active');
 
