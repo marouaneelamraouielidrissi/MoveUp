@@ -517,6 +517,7 @@ const App = {
         if (this.moveReminderInterval) {
             clearInterval(this.moveReminderInterval);
             this.moveReminderInterval = null;
+            this.lastMoveTime = Date.now(); // repart à zéro pour le tracker sédentaire
         }
         this.moveReminderCount = 0;
     },
@@ -526,6 +527,7 @@ const App = {
         this.sedentaryInterval = setInterval(() => {
             if (!this.settings.sedentaryEnabled) return;
             if (this.state === 'onBreak') return;
+            if (this.moveReminderInterval) return; // rappels de mouvement actifs, ne pas empiler
 
             const minutesSinceMove = (Date.now() - this.lastMoveTime) / 60000;
             if (minutesSinceMove >= this.settings.sedentaryAlert) {
