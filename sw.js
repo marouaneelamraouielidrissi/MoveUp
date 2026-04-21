@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moveup-v1';
+const CACHE_NAME = 'moveup-v2';
 const ASSETS = [
     '/',
     '/index.html',
