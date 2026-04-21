@@ -12,6 +12,7 @@ const App = {
     sedentaryInterval: null,
     moveReminderInterval: null,
     moveReminderCount: 0,
+    moveRemindersStartTime: null,
     lastBreakSuggestion: '',
     breakTimerStarted: false,
     lastMoveTime: Date.now(),
@@ -233,6 +234,8 @@ const App = {
                 if (this.state === 'working' && this.endTimestamp) {
                     this.syncTimer();
                 }
+                // Rattraper les rappels de mouvement manqués
+                this.syncMoveReminders();
                 this.requestWakeLock();
             }
         });
@@ -515,14 +518,35 @@ const App = {
     startMoveReminders(suggestion) {
         this.stopMoveReminders();
         this.moveReminderCount = 0;
+        this.moveRemindersStartTime = Date.now();
         this.lastBreakSuggestion = suggestion;
+        // setInterval en secours si l'app reste en premier plan
         this.moveReminderInterval = setInterval(() => {
+            this.fireNextMoveReminder();
+        }, 10 * 60 * 1000);
+    },
+
+    fireNextMoveReminder() {
+        if (this.moveReminderCount >= 2) { this.stopMoveReminders(); return; }
+        this.moveReminderCount++;
+        NotificationManager.notifyMoveReminder(this.moveReminderCount, this.lastBreakSuggestion);
+        if (this.moveReminderCount >= 2) {
+            this.stopMoveReminders();
+        }
+    },
+
+    // Rattrape les rappels manqués quand l'app revient au premier plan
+    syncMoveReminders() {
+        if (!this.moveRemindersStartTime) return;
+        const elapsedMin = (Date.now() - this.moveRemindersStartTime) / 60000;
+        const shouldHaveFired = Math.min(Math.floor(elapsedMin / 10), 2);
+        while (this.moveReminderCount < shouldHaveFired) {
             this.moveReminderCount++;
             NotificationManager.notifyMoveReminder(this.moveReminderCount, this.lastBreakSuggestion);
-            if (this.moveReminderCount >= 2) {
-                this.stopMoveReminders();
-            }
-        }, 10 * 60 * 1000); // 10 minutes
+        }
+        if (this.moveReminderCount >= 2) {
+            this.stopMoveReminders();
+        }
     },
 
     stopMoveReminders() {
@@ -532,6 +556,7 @@ const App = {
             this.lastMoveTime = Date.now(); // repart à zéro pour le tracker sédentaire
         }
         this.moveReminderCount = 0;
+        this.moveRemindersStartTime = null;
     },
 
     // === Sedentary Tracker ===
